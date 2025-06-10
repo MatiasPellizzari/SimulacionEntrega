@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 # --- Parámetros del sistema ---
 area_tanque = 2.0              # Área de la base de los tanques (m²)
@@ -7,7 +6,7 @@ coef_transferencia = 0.5       # K1: coeficiente de transferencia entre tanques
 coef_descarga = 1.0            # K2: coeficiente de descarga del segundo tanque
 gravedad = 9.8                 # Aceleración gravitatoria (m/s²)
 paso_tiempo = 0.1              # Paso de integración (s)
-tiempo_total = 2000             # Duración total de la simulación (s)
+tiempo_total = 1000             # Duración total de la simulación (s)
 
 # --- Vector de tiempo ---
 tiempo = np.arange(0, tiempo_total + paso_tiempo, paso_tiempo)
@@ -94,7 +93,7 @@ for i in range(1, len(tiempo)):
 
     # --- Entrada variable Euler ---
     h1_anterior_v_euler = altura1_var_euler[-1]
-    h2_anterior_v_euler = altura1_var_euler[-1]
+    h2_anterior_v_euler = altura2_var_euler[-1]
 
     derivada_h1_v_euler, derivada_h2_v_euler = derivadas(tiempo[i-1], h1_anterior_v_euler, h2_anterior_v_euler, calcular_flujo_variable)
 
@@ -138,51 +137,29 @@ caudal_salida_const_euler.append(coef_descarga * np.sqrt(max(0, gravedad * altur
 caudal_salida_var_rk.append(coef_descarga * np.sqrt(max(0, gravedad * altura2_var_rk[-1])))
 caudal_salida_const_rk.append(coef_descarga * np.sqrt(max(0, gravedad * altura2_const_rk[-1])))
 
-# --- Gráficos ---
-fig, axs = plt.subplots(2, 2, figsize=(12, 8))
-fig.suptitle('Simulación de Tanques Acoplados', fontsize=16)
+# --- Guardar datos en archivos para Gnuplot ---
+# Archivo para h1(t)
+with open('h1_data.dat', 'w') as f:
+    f.write("# tiempo h1_const_euler h1_const_rk h1_var_euler h1_var_rk\n")
+    for i in range(len(tiempo)):
+        f.write(f"{tiempo[i]:.4f} {altura1_const_euler[i]:.4f} {altura1_const_rk[i]:.4f} {altura1_var_euler[i]:.4f} {altura1_var_rk[i]:.4f}\n")
 
-# Altura h1(t)
-axs[0, 0].plot(tiempo, altura1_const_euler, label='Constante Euler', linestyle='--')
-axs[0, 0].plot(tiempo, altura1_const_rk, label='Constante Runge-Kutta')
-axs[0, 0].plot(tiempo, altura1_var_euler, label='Variable Euler', linestyle='--')
-axs[0, 0].plot(tiempo, altura1_var_rk, label='Variable Runge-Kutta')
-axs[0, 0].set_title('Altura del Tanque 1 (h1)')
-axs[0, 0].set_xlabel('Tiempo (s)')
-axs[0, 0].set_ylabel('Altura (m)')
-axs[0, 0].legend()
-axs[0, 0].grid(True)
+# Archivo para h2(t)
+with open('h2_data.dat', 'w') as f:
+    f.write("# tiempo h2_const_euler h2_const_rk h2_var_euler h2_var_rk\n")
+    for i in range(len(tiempo)):
+        f.write(f"{tiempo[i]:.4f} {altura2_const_euler[i]:.4f} {altura2_const_rk[i]:.4f} {altura2_var_euler[i]:.4f} {altura2_var_rk[i]:.4f}\n")
 
-# Altura h2(t)
-axs[0, 1].plot(tiempo, altura2_const_euler, label='Constante Euler', linestyle='--')
-axs[0, 1].plot(tiempo, altura2_const_rk, label='Constante Runge-Kutta')
-axs[0, 1].plot(tiempo, altura2_var_euler, label='Variable Euler', linestyle='--')
-axs[0, 1].plot(tiempo, altura2_var_rk, label='Variable Runge-Kutta')
-axs[0, 1].set_title('Altura del Tanque 2 (h2)')
-axs[0, 1].set_xlabel('Tiempo (s)')
-axs[0, 1].set_ylabel('Altura (m)')
-axs[0, 1].legend()
-axs[0, 1].grid(True)
+# Archivo para flujo de entrada
+with open('flujo_entrada.dat', 'w') as f:
+    f.write("# tiempo flujo_constante flujo_variable\n")
+    for i in range(len(tiempo)):
+        f.write(f"{tiempo[i]:.4f} {flujo_constante[i]:.4f} {flujo_variable_total[i]:.4f}\n")
 
-# Flujo de entrada
-axs[1, 0].plot(tiempo, flujo_constante, label='Constante')
-axs[1, 0].plot(tiempo, flujo_variable_total, label='Variable')
-axs[1, 0].set_title('Flujo de Entrada F(t)')
-axs[1, 0].set_xlabel('Tiempo (s)')
-axs[1, 0].set_ylabel('Flujo (m³/s)')
-axs[1, 0].legend()
-axs[1, 0].grid(True)
+# Archivo para caudal de salida
+with open('caudal_salida.dat', 'w') as f:
+    f.write("# tiempo caudal_const_euler caudal_const_rk caudal_var_euler caudal_var_rk\n")
+    for i in range(len(tiempo)):
+        f.write(f"{tiempo[i]:.4f} {caudal_salida_const_euler[i]:.4f} {caudal_salida_const_rk[i]:.4f} {caudal_salida_var_euler[i]:.4f} {caudal_salida_var_rk[i]:.4f}\n")
 
-# Caudal de salida
-axs[1, 1].plot(tiempo, caudal_salida_const_euler, label='Constante Euler', linestyle='--')
-axs[1, 1].plot(tiempo, caudal_salida_const_rk, label='Constante Runge-Kutta')
-axs[1, 1].plot(tiempo, caudal_salida_var_euler, label='Variable Euler', linestyle='--')
-axs[1, 1].plot(tiempo, caudal_salida_var_rk, label='Variable Runge-Kutta')
-axs[1, 1].set_title('Caudal de Salida Q(t)')
-axs[1, 1].set_xlabel('Tiempo (s)')
-axs[1, 1].set_ylabel('Flujo (m³/s)')
-axs[1, 1].legend()
-axs[1, 1].grid(True)
-
-plt.tight_layout()
-plt.show()
+print("Datos guardados en 'h1_data.dat', 'h2_data.dat', 'flujo_entrada.dat' y 'caudal_salida.dat'.")
